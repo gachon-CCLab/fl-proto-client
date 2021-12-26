@@ -1,2 +1,9 @@
 pandas
 flwr
+urllib3
+boto3
+requests
+fastapi
+uvicorn[standard]
+pydantic
+json
