@@ -6,4 +6,6 @@ requests
 fastapi
 uvicorn[standard]
 pydantic
-json
+tensorflow
+botocore
+keras

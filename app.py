@@ -1,15 +1,19 @@
 import flwr as fl
-# import tensorflow as tf
+import tensorflow as tf
+from tensorflow import keras
+
 import os
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
 import requests
-from fastapi import FastAPI,BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks
 import asyncio
 import uvicorn
 from pydantic.main import BaseModel
 import logging
 import json
+import boto3
+
 app = FastAPI()
 
 
@@ -18,6 +22,18 @@ class FLclient_status(BaseModel):
 
 
 status = FLclient_status()
+
+
+def build_model():
+    model = tf.keras.models.Sequential([
+        tf.keras.layers.Flatten(input_shape=(28, 28)),
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Dense(10, activation='softmax')
+    ])
+
+    model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
+    return model
 
 
 # Load and compile Keras model
@@ -92,11 +108,38 @@ async def notify_fin():
 
 # Start Flower client
 # s3에 model 없고 환경변수를 탐색하여 ENV가 init이라면 s3에 초기 가중치를 업로드 한다.
+from botocore.exceptions import ClientError
+
+
+def S3_check(s3_client, bucket, key):# 없으면 참
+    try:
+        s3_client.head_object(Bucket=bucket, Key=key)
+    except ClientError as e:
+        return int(e.response['Error']['Code']) != 404
+    return True
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
+    print(tf.version.VERSION)
+
     if os.environ.get('ENV', 'development') == 'init':
-        res = requests.get('10.152.183.186:8000' + '/info')  # 서버측 manager
+        res = requests.get('http://10.152.183.186:8000' + '/FLSe/info')  # 서버측 manager
+        S3_info = res.json()['Server_Status']
+        model = build_model()
+        model.save(S3_info['S3_key'])
+        ##########서버에 secret피일 이미 있음 #################
+        ACCESS_KEY_ID =  os.environ.get('ACCESS_KEY_ID')
+        ACCESS_SECRET_KEY = os.environ.get('ACCESS_SECRET_KEY')
+        BUCKET_NAME = os.environ.get('BUCKET_NAME')
+        s3_client = boto3.client('s3', aws_access_key_id=ACCESS_KEY_ID,
+                                 aws_secret_access_key=ACCESS_SECRET_KEY)
+        if S3_check(s3_client, BUCKET_NAME, S3_info['S3_key']):
+
+            response = s3_client.upload_file(
+                S3_info['S3_key'], BUCKET_NAME, S3_info['S3_key'])
+        else:
+            print('이미 모델 있음')
     else:
         uvicorn.run("app:app", host='0.0.0.0', port=8002, reload=True)
 
