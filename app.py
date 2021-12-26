@@ -36,27 +36,36 @@ def build_model():
     return model
 
 
-# Load and compile Keras model
-# model = tf.keras.applications.MobileNetV2((32, 32, 3), classes=10, weights=None)
-# model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
-
-# Load CIFAR-10 dataset
-# (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 
 # Define Flower client
-# class CifarClient(fl.client.NumPyClient):
-#    def get_parameters(self):
-#        return model.get_weights()#
+class CifarClient(fl.client.NumPyClient):
+    def __init__(self, model, x_train, y_train, x_test, y_test):
+        self.model = model
+        self.x_train, self.y_train = x_train, y_train
+        self.x_test, self.y_test = x_test, y_test
 
-#    def fit(self, parameters, config):
-#        model.set_weights(parameters)
-#        model.fit(x_train, y_train, epochs=1, batch_size=32, steps_per_epoch=3)
-#        return model.get_weights(), len(x_train), {}
+    def get_parameters(self):
+        return model.get_weights()  #
 
-#    def evaluate(self, parameters, config):
-#        model.set_weights(parameters)
-#        loss, accuracy = model.evaluate(x_test, y_test)
-#        return loss, len(x_test), {"accuracy": accuracy}
+    def fit(self, parameters, config):
+        model.set_weights(parameters)
+        model.fit(self.x_train, self.y_train, epochs=1, batch_size=32, steps_per_epoch=3)
+        return model.get_weights(), len(self.x_train), {}
+
+    def evaluate(self, parameters, config):
+        model.set_weights(parameters)
+        loss, accuracy = model.evaluate(self.x_test, self.y_test)
+        return loss, len(self.x_test), {"accuracy": accuracy}
+
+
+model=keras.models.load_model('/model/model.h5')
+# Load CIFAR-10 dataset
+mnist = tf.keras.datasets.mnist
+
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+
 @app.on_event("startup")
 def startup():
     pass
@@ -75,19 +84,26 @@ async def flclientstart(background_tasks: BackgroundTasks):
 
 
 async def run_client():
-    global status
+
     await flower_client_start()
 
 
 async def flower_client_start():
     print('learning')
-    await asyncio.sleep(10)
+    global status
+    global model
+    global x_train
+    global x_test
+    global y_train
+    global y_test
+    fl.client.start_numpy_client(server_address="10.152.183.181:8080", client=CifarClient(model,x_train,y_train, x_test, y_test))
     await model_save()
 
 
 async def model_save():
     print('model_save')
-    await asyncio.sleep(10)
+    global model
+    model.save('/model/model.h5')
     await notify_fin()
 
 
@@ -111,7 +127,7 @@ async def notify_fin():
 from botocore.exceptions import ClientError
 
 
-def S3_check(s3_client, bucket, key):# 없으면 참
+def S3_check(s3_client, bucket, key):  # 없으면 참
     try:
         s3_client.head_object(Bucket=bucket, Key=key)
     except ClientError as e:
@@ -129,7 +145,7 @@ if __name__ == '__main__':
         model = build_model()
         model.save(S3_info['S3_key'])
         ##########서버에 secret피일 이미 있음 #################
-        ACCESS_KEY_ID =  os.environ.get('ACCESS_KEY_ID')
+        ACCESS_KEY_ID = os.environ.get('ACCESS_KEY_ID')
         ACCESS_SECRET_KEY = os.environ.get('ACCESS_SECRET_KEY')
         BUCKET_NAME = os.environ.get('BUCKET_NAME')
         s3_client = boto3.client('s3', aws_access_key_id=ACCESS_KEY_ID,
@@ -143,4 +159,4 @@ if __name__ == '__main__':
     else:
         uvicorn.run("app:app", host='0.0.0.0', port=8002, reload=True)
 
-# fl.client.start_numpy_client(server_address="10.152.183.181:8080", client=CifarClient())
+#
