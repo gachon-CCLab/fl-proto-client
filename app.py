@@ -58,7 +58,7 @@ class CifarClient(fl.client.NumPyClient):
         return loss, len(self.x_test), {"accuracy": accuracy}
 
 
-model=keras.models.load_model('/model/model.h5')
+model=build_model()
 # Load CIFAR-10 dataset
 mnist = tf.keras.datasets.mnist
 
@@ -84,7 +84,8 @@ async def flclientstart(background_tasks: BackgroundTasks):
 
 
 async def run_client():
-
+    global model
+    model=keras.models.load_model('/model/model.h5')
     await flower_client_start()
 
 
