@@ -23,7 +23,7 @@ app = FastAPI()
 
 class FLclient_status(BaseModel):
     FLCLstart: bool = False
-    FLCFail:bool=False
+    FLCFail: bool = False
 
 
 status = FLclient_status()
@@ -39,7 +39,6 @@ def build_model():
 
     model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
     return model
-
 
 
 # Define Flower client
@@ -63,7 +62,9 @@ class MnistClient(fl.client.NumPyClient):
         return loss, len(self.x_test), {"accuracy": accuracy}
 
 
-model=build_model()
+model = build_model()
+
+
 # Load CIFAR-10 dataset
 
 
@@ -87,14 +88,15 @@ async def flclientstart(background_tasks: BackgroundTasks):
 async def run_client():
     global model
     try:
-        model=keras.models.load_model('/model/model.h5')
+        model = keras.models.load_model('/model/model.h5')
         pass
     except Exception as e:
-        print('[E] learning',e)
-        status.FLCFail=True
+        print('[E] learning', e)
+        status.FLCFail = True
         await notify_fail()
-        status.FLCFail=False
+        status.FLCFail = False
     await flower_client_start()
+
 
 async def flower_client_start():
     print('learning')
@@ -104,13 +106,14 @@ async def flower_client_start():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     x_train, x_test = x_train / 255.0, x_test / 255.0
     try:
-        fl.client.start_numpy_client(server_address="10.152.183.181:8080", client=MnistClient(model, x_train, y_train, x_test, y_test))
+        fl.client.start_numpy_client(server_address="10.152.183.181:8080",
+                                     client=MnistClient(model, x_train, y_train, x_test, y_test))
         await model_save()
     except Exception as e:
-        print('[E] learning',e)
-        status.FLCFail=True
+        print('[E] learning', e)
+        status.FLCFail = True
         await notify_fail()
-        status.FLCFail=False
+        status.FLCFail = False
 
 
 async def model_save():
@@ -120,40 +123,38 @@ async def model_save():
         model.save('/model/model.h5')
         await notify_fin()
     except Exception as e:
-        print('[E] learning',e)
-        status.FLCFail=True
+        print('[E] learning', e)
+        status.FLCFail = True
         await notify_fail()
-        status.FLCFail=False
+        status.FLCFail = False
 
 
-
-async def notify_fin():
+def notify_fin():
     global status
     status.FLCLstart = False
-    while True:
-        print('try notify_fin')
-        r = requests.get('http://localhost:8080/trainFin')
-        print('try notify_fin')
-        if r.status_code == 200:
-            print('trainFin')
-            break
-        else:
-            print(r.content)
-        await asyncio.sleep(5)
+
+    print('try notify_fin')
+    r = requests.get('http://localhost:8080/trainFin')
+    print('try notify_fin')
+    if r.status_code == 200:
+        print('trainFin')
+
+    else:
+        print(r.content)
+
 
 async def notify_fail():
     global status
     status.FLCLstart = False
-    while True:
-        print('try')
-        r = requests.get('http://localhost:8080/trainFail')
-        print('try')
-        if r.status_code == 200:
-            print('trainFin')
-            break
-        else:
-            print(r.content)
-        await asyncio.sleep(5)
+    print('try')
+    r = requests.get('http://localhost:8080/trainFail')
+    print('try')
+    if r.status_code == 200:
+        print('trainFin')
+    else:
+        print(r.content)
+
+
 # Start Flower client
 # s3에 model 없고 환경변수를 탐색하여 ENV가 init이라면 s3에 초기 가중치를 업로드 한다.
 from botocore.exceptions import ClientError
