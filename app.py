@@ -131,9 +131,9 @@ async def notify_fin():
     global status
     status.FLCLstart = False
     while True:
-        print('try')
+        print('try notify_fin')
         r = requests.get('http://localhost:8080/trainFin')
-        print('try')
+        print('try notify_fin')
         if r.status_code == 200:
             print('trainFin')
             break
