@@ -146,8 +146,9 @@ def notify_fin():
 async def notify_fail():
     global status
     status.FLCLstart = False
-    print('try')
-    r = requests.get('http://localhost:8080/trainFail')
+    loop = asyncio.get_event_loop()
+    future1 = loop.run_in_executor(None, requests.get, 'http://localhost:8080/trainFail')
+    r = await future1
     print('try')
     if r.status_code == 200:
         print('trainFin')
