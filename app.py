@@ -129,16 +129,15 @@ async def model_save():
         status.FLCFail = False
 
 
-def notify_fin():
+async def notify_fin():
     global status
     status.FLCLstart = False
-
-    print('try notify_fin')
-    r = requests.get('http://localhost:8080/trainFin')
+    loop = asyncio.get_event_loop()
+    future2 = loop.run_in_executor(None, requests.get, 'http://localhost:8080/trainFin')
+    r = await future2
     print('try notify_fin')
     if r.status_code == 200:
         print('trainFin')
-
     else:
         print(r.content)
 
@@ -149,7 +148,7 @@ async def notify_fail():
     loop = asyncio.get_event_loop()
     future1 = loop.run_in_executor(None, requests.get, 'http://localhost:8080/trainFail')
     r = await future1
-    print('try')
+    print('try notify_fail')
     if r.status_code == 200:
         print('trainFin')
     else:
