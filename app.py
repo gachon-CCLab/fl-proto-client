@@ -86,9 +86,15 @@ async def flclientstart(background_tasks: BackgroundTasks):
 
 async def run_client():
     global model
-    model=keras.models.load_model('/model/model.h5')
+    try:
+        model=keras.models.load_model('/model/model.h5')
+        pass
+    except Exception as e:
+        print('[E] learning',e)
+        status.FLCFail=True
+        await notify_fail()
+        status.FLCFail=False
     await flower_client_start()
-
 
 async def flower_client_start():
     print('learning')
@@ -110,8 +116,15 @@ async def flower_client_start():
 async def model_save():
     print('model_save')
     global model
-    model.save('/model/model.h5')
-    await notify_fin()
+    try:
+        model.save('/model/model.h5')
+        await notify_fin()
+    except Exception as e:
+        print('[E] learning',e)
+        status.FLCFail=True
+        await notify_fail()
+        status.FLCFail=False
+
 
 
 async def notify_fin():
