@@ -165,7 +165,7 @@ def S3_check(s3_client, bucket, key):  # 없으면 참
         s3_client.head_object(Bucket=bucket, Key=key)
     except ClientError as e:
         return int(e.response['Error']['Code']) != 404
-    return True
+    return False
 
 
 if __name__ == '__main__':
@@ -184,7 +184,7 @@ if __name__ == '__main__':
         s3_client = boto3.client('s3', aws_access_key_id=ACCESS_KEY_ID,
                                  aws_secret_access_key=ACCESS_SECRET_KEY)
         if S3_check(s3_client, BUCKET_NAME, S3_info['S3_key']):
-
+            print('모델 없음')
             response = s3_client.upload_file(
                 S3_info['S3_key'], BUCKET_NAME, S3_info['S3_key'])
         else:
