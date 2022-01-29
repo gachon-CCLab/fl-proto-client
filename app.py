@@ -13,6 +13,7 @@ from pydantic.main import BaseModel
 import logging
 import json
 import boto3
+import time
 
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 if len(physical_devices) > 0:
@@ -22,6 +23,7 @@ app = FastAPI()
 
 
 class FLclient_status(BaseModel):
+    FL_client_online:bool=True
     FLCLstart: bool = False
     FLCFail: bool = False
 
@@ -92,17 +94,20 @@ def get_model_test():
         x_train, x_test = x_train / 255.0, x_test / 255.0
         print(model.evaluate(x_test,y_test))
     
-    
+@app.get('/online')
+def get_info():
+    return status
 
 async def run_client():
     global model
     try:
-        model = keras.models.load_model('/model/model.h5')
+        #time.sleep(10)
+        #model = keras.models.load_model('/model/model.h5')
         pass
     except Exception as e:
         print('[E] learning', e)
         status.FLCFail = True
-        await notify_fail()
+        #await notify_fail()
         status.FLCFail = False
     await flower_client_start()
 
