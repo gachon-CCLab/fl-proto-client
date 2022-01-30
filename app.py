@@ -102,12 +102,12 @@ async def run_client():
     global model
     try:
         #time.sleep(10)
-        #model = keras.models.load_model('/model/model.h5')
+        model = keras.models.load_model('/model/model.h5')
         pass
     except Exception as e:
         print('[E] learning', e)
         status.FLCFail = True
-        #await notify_fail()
+        await notify_fail()
         status.FLCFail = False
     await flower_client_start()
 
