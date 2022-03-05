@@ -164,6 +164,7 @@ async def flower_client_start():
         await loop.run_in_executor(None, request)
         await model_save()
     except Exception as e:
+        raise e
         print('[E] learning', e)
         status.FLCFail = True
         await notify_fail()
