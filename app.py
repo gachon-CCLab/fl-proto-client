@@ -28,7 +28,7 @@ class FLclient_status(BaseModel):
     FL_client_online:bool=True
     FLCLstart: bool = False
     FLCFail: bool = False
-
+    FL_server_IP: str = None#'10.152.183.181:8080'
 
 status = FLclient_status()
 
@@ -56,6 +56,7 @@ class MnistClient(fl.client.NumPyClient):
         return model.get_weights()  #
 
     def fit(self, parameters, config):
+        print(parameters)
         model.set_weights(parameters)
         model.fit(self.x_train, self.y_train, epochs=11, batch_size=32)
         return model.get_weights(), len(self.x_train), {}
@@ -80,11 +81,12 @@ def startup():
     # loop.create_task(run_client())
 
 
-@app.get("/start")
-async def flclientstart(background_tasks: BackgroundTasks):
+@app.get("/start/{Server_IP}")
+async def flclientstart(background_tasks: BackgroundTasks, Server_IP : str):
     global status
     print('start')
     status.FLCLstart = True
+    status.FL_server_IP = Server_IP
     background_tasks.add_task(run_client)
     return status
 
@@ -123,7 +125,7 @@ async def flower_client_start():
     x_train, x_test = x_train / 255.0, x_test / 255.0
     try:
         loop = asyncio.get_event_loop()
-        request=partial(fl.client.start_numpy_client,server_address="10.152.183.181:8080",client=MnistClient(model, x_train, y_train, x_test, y_test))
+        request=partial(fl.client.start_numpy_client,server_address=status.FL_server_IP,client=MnistClient(model, x_train, y_train, x_test, y_test))
         await loop.run_in_executor(None, request)
         await model_save()
     except Exception as e:
