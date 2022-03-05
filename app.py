@@ -103,7 +103,6 @@ class CustomeClient(fl.client.NumPyClient):
         return loss, num_examples_test, {"accuracy": accuracy}
 
 
-model = build_model()
 
 
 # Load CIFAR-10 dataset
@@ -120,6 +119,9 @@ def startup():
 @app.get("/start/{Server_IP}")
 async def flclientstart(background_tasks: BackgroundTasks, Server_IP: str):
     global status
+    global model
+    model = build_model()
+
     print('start')
     status.FLCLstart = True
     status.FL_server_IP = Server_IP
@@ -175,7 +177,7 @@ async def flower_client_start():
         status.FLCFail = True
         await notify_fail()
         status.FLCFail = False
-        raise e
+        #raise e
 
 
 async def model_save():
