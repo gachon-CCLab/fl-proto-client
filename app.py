@@ -25,10 +25,11 @@ app = FastAPI()
 
 
 class FLclient_status(BaseModel):
-    FL_client_online:bool=True
+    FL_client_online: bool = True
     FLCLstart: bool = False
     FLCFail: bool = False
-    FL_server_IP: str = None#'10.152.183.181:8080'
+    FL_server_IP: str = None  # '10.152.183.181:8080'
+
 
 status = FLclient_status()
 
@@ -54,7 +55,8 @@ class CustomeClient(fl.client.NumPyClient):
 
     def get_parameters(self):
         """Get parameters of the local model."""
-        raise Exception("Not implemented (server-side parameter initialization)")
+        return self.model.get_weights()
+        #raise Exception("Not implemented (server-side parameter initialization)")
 
     def fit(self, parameters, config):
         """Train parameters on the locally held training set."""
@@ -116,7 +118,7 @@ def startup():
 
 
 @app.get("/start/{Server_IP}")
-async def flclientstart(background_tasks: BackgroundTasks, Server_IP : str):
+async def flclientstart(background_tasks: BackgroundTasks, Server_IP: str):
     global status
     print('start')
     status.FLCLstart = True
@@ -124,22 +126,25 @@ async def flclientstart(background_tasks: BackgroundTasks, Server_IP : str):
     background_tasks.add_task(run_client)
     return status
 
+
 @app.get('/test')
 def get_model_test():
-    if status.FLCLstart==False:
+    if status.FLCLstart == False:
         mnist = tf.keras.datasets.mnist
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
         x_train, x_test = x_train / 255.0, x_test / 255.0
-        print(model.evaluate(x_test,y_test))
-    
+        print(model.evaluate(x_test, y_test))
+
+
 @app.get('/online')
 def get_info():
     return status
 
+
 async def run_client():
     global model
     try:
-        #time.sleep(10)
+        # time.sleep(10)
         model.load_weights('/model/model.h5')
         pass
     except Exception as e:
@@ -159,16 +164,18 @@ async def flower_client_start():
     x_train, x_test = x_train / 255.0, x_test / 255.0
     try:
         loop = asyncio.get_event_loop()
-        client = CustomeClient(model, x_train, y_train, x_test, y_test)
-        request=partial(fl.client.start_numpy_client, server_address=status.FL_server_IP, client=client)
+        #client = CustomeClient(model, x_train, y_train, x_test, y_test)
+        print(status.FL_server_IP)
+        request = partial(fl.client.start_numpy_client, server_address=status.FL_server_IP, client=CustomeClient(model, x_train, y_train, x_test, y_test))
         await loop.run_in_executor(None, request)
         await model_save()
     except Exception as e:
-        raise e
+
         print('[E] learning', e)
         status.FLCFail = True
         await notify_fail()
         status.FLCFail = False
+        raise e
 
 
 async def model_save():
