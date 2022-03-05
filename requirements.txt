@@ -1,5 +1,5 @@
 pandas
-flwr==0.18.0
+flwr==0.17.0
 urllib3
 boto3
 requests

@@ -47,16 +47,19 @@ def build_model():
 
 
 # Define Flower client
-class CustomeClient(NumPyClient):
+class CustomeClient:
     def __init__(self, model, x_train, y_train, x_test, y_test):
         self.model = model
         self.x_train, self.y_train = x_train, y_train
         self.x_test, self.y_test = x_test, y_test
 
+    #def get_properties(self, **kwargs):
+    #    super().get_properties(self)
+
     def get_parameters(self):
         """Get parameters of the local model."""
         return self.model.get_weights()
-        #raise Exception("Not implemented (server-side parameter initialization)")
+        # raise Exception("Not implemented (server-side parameter initialization)")
 
     def fit(self, parameters, config):
         """Train parameters on the locally held training set."""
@@ -101,8 +104,6 @@ class CustomeClient(NumPyClient):
         loss, accuracy = self.model.evaluate(self.x_test, self.y_test, 32, steps=steps)
         num_examples_test = len(self.x_test)
         return loss, num_examples_test, {"accuracy": accuracy}
-
-
 
 
 # Load CIFAR-10 dataset
@@ -167,18 +168,20 @@ async def flower_client_start():
     try:
         loop = asyncio.get_event_loop()
         client = CustomeClient(model, x_train, y_train, x_test, y_test)
-        assert type(client).get_properties == fl.client.NumPyClient.get_properties
+#        assert type(client).get_properties == fl.client.NumPyClient.get_properties
         print(status.FL_server_IP)
-        request = partial(fl.client.start_numpy_client, server_address=status.FL_server_IP, client=client)
-        await loop.run_in_executor(None, request)
+        fl.client.start_numpy_client(server_address=status.FL_server_IP, client=client)
+
+        #await loop.run_in_executor(None, request)
         await model_save()
+        del client
     except Exception as e:
 
         print('[E] learning', e)
         status.FLCFail = True
         await notify_fail()
         status.FLCFail = False
-        #raise e
+        # raise e
 
 
 async def model_save():
@@ -187,6 +190,7 @@ async def model_save():
     try:
         model.save('/model/model.h5')
         await notify_fin()
+        model=None
     except Exception as e:
         print('[E] learning', e)
         status.FLCFail = True
