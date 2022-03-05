@@ -140,7 +140,7 @@ async def run_client():
     global model
     try:
         #time.sleep(10)
-        model.load_model('/model/model.h5')
+        model.load_weights('/model/model.h5')
         pass
     except Exception as e:
         print('[E] learning', e)
