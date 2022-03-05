@@ -14,7 +14,7 @@ import logging
 import json
 import boto3
 from functools import partial
-
+from flwr.client import NumPyClient
 import time
 
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
@@ -47,7 +47,7 @@ def build_model():
 
 
 # Define Flower client
-class CustomeClient(fl.client.NumPyClient):
+class CustomeClient(NumPyClient):
     def __init__(self, model, x_train, y_train, x_test, y_test):
         self.model = model
         self.x_train, self.y_train = x_train, y_train
@@ -166,9 +166,10 @@ async def flower_client_start():
     x_train, x_test = x_train / 255.0, x_test / 255.0
     try:
         loop = asyncio.get_event_loop()
-        #client = CustomeClient(model, x_train, y_train, x_test, y_test)
+        client = CustomeClient(model, x_train, y_train, x_test, y_test)
+        assert type(client).get_properties == fl.client.NumPyClient.get_properties
         print(status.FL_server_IP)
-        request = partial(fl.client.start_numpy_client, server_address=status.FL_server_IP, client=CustomeClient(model, x_train, y_train, x_test, y_test))
+        request = partial(fl.client.start_numpy_client, server_address=status.FL_server_IP, client=client)
         await loop.run_in_executor(None, request)
         await model_save()
     except Exception as e:
