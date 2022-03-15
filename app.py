@@ -170,9 +170,10 @@ async def flower_client_start():
         client = CustomeClient(model, x_train, y_train, x_test, y_test)
 #        assert type(client).get_properties == fl.client.NumPyClient.get_properties
         print(status.FL_server_IP)
-        fl.client.start_numpy_client(server_address=status.FL_server_IP, client=client)
-
-        #await loop.run_in_executor(None, request)
+        #fl.client.start_numpy_client(server_address=status.FL_server_IP, client=client)
+        request = partial(fl.client.start_numpy_client, server_address=status.FL_server_IP, client=client)
+        await loop.run_in_executor(None, request)
+        
         await model_save()
         del client
     except Exception as e:
