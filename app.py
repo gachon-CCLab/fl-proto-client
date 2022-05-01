@@ -151,7 +151,7 @@ async def run_client():
         model.load_weights('/model/model.h5')
         pass
     except Exception as e:
-        print('[E] learning', e)
+        print('[E][PC0001] learning', e)
         status.FLCFail = True
         await notify_fail()
         status.FLCFail = False
@@ -178,7 +178,7 @@ async def flower_client_start():
         del client
     except Exception as e:
 
-        print('[E] learning', e)
+        print('[E][PC0002] learning', e)
         status.FLCFail = True
         await notify_fail()
         status.FLCFail = False
@@ -193,7 +193,7 @@ async def model_save():
         await notify_fin()
         model=None
     except Exception as e:
-        print('[E] learning', e)
+        print('[E][PC0003] learning', e)
         status.FLCFail = True
         await notify_fail()
         status.FLCFail = False
