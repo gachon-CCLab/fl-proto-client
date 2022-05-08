@@ -243,7 +243,7 @@ if __name__ == '__main__':
     print(tf.version.VERSION)
 
     if os.environ.get('ENV', 'development') == 'init':
-        res = requests.get('http://10.1.196.121:8000' + '/FLSe/info')  # 서버측 manager
+        res = requests.get('http://10.1.196.109:8000' + '/FLSe/info')  # 서버측 manager
         S3_info = res.json()['Server_Status']
         model = build_model()
         model.save(S3_info['S3_key'])
