@@ -242,7 +242,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     print(tf.version.VERSION)
 
-    if os.environ.get('ENV', 'development') == 'init':
+#     if os.environ.get('ENV', 'development') == 'init':
+    if os.environ.get('ENV') is not None:
         res = requests.get('http://10.1.196.109:8000' + '/FLSe/info')  # 서버측 manager
         S3_info = res.json()['Server_Status']
         model = build_model()
